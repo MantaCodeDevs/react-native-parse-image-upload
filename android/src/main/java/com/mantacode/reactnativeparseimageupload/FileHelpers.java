@@ -5,6 +5,7 @@ import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import java.net.URL;
 import java.io.*;
 
 public class FileHelpers {
@@ -64,10 +65,10 @@ public class FileHelpers {
         float height = image.getHeight();
 
         // do not upscale
-        maxWidth = maxWidth > 0 && maxWidth < width ? maxWidth : width;
-        maxHeight = maxHeight > 0 && maxHeight < height ? maxHeight : height;
+        float widthRatio = maxWidth > 0 && maxWidth < width ? (float)maxWidth / width : 1.0f;
+        float heightRatio = maxHeight > 0 && maxHeight < height ? (float)maxHeight / height : 1.0f;
 
-        float ratio = Math.min((float)maxWidth / width, (float)maxHeight / height);
+        float ratio = Math.min(widthRatio, heightRatio);
 
         int finalWidth = (int) (width * ratio);
         int finalHeight = (int) (height * ratio);
