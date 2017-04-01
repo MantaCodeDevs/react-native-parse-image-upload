@@ -1,0 +1,12 @@
+### Android Studio ###
+.idea/
+.gradle/
+local.properties
+
+### Node
+node_modules
+*.log
+yarn.lock
+
+## Android iml
+*.iml

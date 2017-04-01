@@ -1,0 +1,26 @@
+{
+  "name": "react-native-parse-image-upload",
+  "version": "0.0.1",
+  "description": "React Native Parse Image Upload module allows to upload local or remote images to parse server (for now only as jpegs)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MantaCodeDevs/react-native-parse-image-upload.git"
+  },
+  "keywords": [
+    "react-native",
+    "android",
+    "parse",
+    "image",
+    "upload"
+  ],
+  "author": "MantaCodeDevs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MantaCodeDevs/react-native-parse-image-upload/issues"
+  },
+  "homepage": "https://github.com/MantaCodeDevs/react-native-parse-image-upload"
+}
