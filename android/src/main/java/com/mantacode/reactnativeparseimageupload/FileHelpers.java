@@ -4,6 +4,8 @@ import android.content.Context;
 import android.net.Uri;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 
 import java.net.URL;
 import java.io.*;
@@ -16,7 +18,7 @@ public class FileHelpers {
         try {
             Uri contentUri = Uri.parse(uri);
             inputStream = context.getContentResolver().openInputStream(contentUri);
-            result = getResizedImageFromStream(inputStream, maxWidth, maxHeight);
+            result = getResizedImageFromStream(inputStream, contentUri.getPath(), maxWidth, maxHeight);
         } finally {
             if (inputStream != null) {
                 inputStream.close();
@@ -32,7 +34,7 @@ public class FileHelpers {
         try {
             URL fileUrl = new URL(url);
             inputStream = fileUrl.openStream();
-            result = getResizedImageFromStream(inputStream, maxWidth, maxHeight);
+            result = getResizedImageFromStream(inputStream, url, maxWidth, maxHeight);
         } finally {
             if (inputStream != null) {
                 inputStream.close();
@@ -42,7 +44,7 @@ public class FileHelpers {
         return result;
     }
 
-    private static byte[] getResizedImageFromStream(InputStream inputStream, int maxWidth, int maxHeight) {
+    private static byte[] getResizedImageFromStream(InputStream inputStream, String path, int maxWidth, int maxHeight) {
         byte[] result = null;
         Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
         Bitmap resizedImage;
@@ -51,6 +53,7 @@ public class FileHelpers {
         } else {
             resizedImage = bitmap;
         }
+        resizedImage = rotateImageIfRequired(resizedImage, path);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         resizedImage.compress(Bitmap.CompressFormat.JPEG, 90, outStream);
         return outStream.toByteArray();
@@ -74,5 +77,29 @@ public class FileHelpers {
         int finalHeight = (int) (height * ratio);
 
         return Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
+    }
+
+    private static Bitmap rotateImageIfRequired(Bitmap img, String path) throws IOException {
+        ExifInterface ei = new ExifInterface(path);
+        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                return rotateImage(img, 90);
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                return rotateImage(img, 180);
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                return rotateImage(img, 270);
+            default:
+                return img;
+        }
+    }
+
+    private static Bitmap rotateImage(Bitmap img, float angle) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(angle);
+        Bitmap rotatedImg = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), matrix, true);
+        img.recycle();
+        return rotatedImg;
     }
 }
