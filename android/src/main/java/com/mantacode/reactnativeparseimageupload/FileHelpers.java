@@ -49,7 +49,7 @@ public class FileHelpers {
         return result;
     }
 
-    private static byte[] getResizedImageFromStream(Bitmap bitmap, String path, int maxWidth, int maxHeight) throws IOException {
+    private static byte[] getResizedImageFromStream(Bitmap bitmap, String path, int maxWidth, int maxHeight) {
         byte[] result = null;
         Bitmap resizedImage;
         if (maxWidth > 0 || maxHeight > 0) {
@@ -82,7 +82,7 @@ public class FileHelpers {
         return Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
     }
 
-    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri) throws IOException {
+    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri) {
         int rotationAngle = getOrientation(context, uri);
         if (rotationAngle > 0) {
             return rotateImage(img, rotationAngle);
