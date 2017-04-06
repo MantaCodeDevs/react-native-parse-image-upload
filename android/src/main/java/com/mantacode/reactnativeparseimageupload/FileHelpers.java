@@ -6,6 +6,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+import android.provider.MediaStore;
+import android.database.Cursor;
 
 import java.net.URL;
 import java.io.*;
@@ -18,7 +20,9 @@ public class FileHelpers {
         try {
             Uri contentUri = Uri.parse(uri);
             inputStream = context.getContentResolver().openInputStream(contentUri);
-            result = getResizedImageFromStream(inputStream, contentUri.getPath(), maxWidth, maxHeight);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            bitmap = rotateImageIfRequired(context, bitmap, contentUri);
+            result = getResizedImageFromStream(bitmap, contentUri.getPath(), maxWidth, maxHeight);
         } finally {
             if (inputStream != null) {
                 inputStream.close();
@@ -34,7 +38,8 @@ public class FileHelpers {
         try {
             URL fileUrl = new URL(url);
             inputStream = fileUrl.openStream();
-            result = getResizedImageFromStream(inputStream, url, maxWidth, maxHeight);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+            result = getResizedImageFromStream(bitmap, url, maxWidth, maxHeight);
         } finally {
             if (inputStream != null) {
                 inputStream.close();
@@ -44,16 +49,14 @@ public class FileHelpers {
         return result;
     }
 
-    private static byte[] getResizedImageFromStream(InputStream inputStream, String path, int maxWidth, int maxHeight) {
+    private static byte[] getResizedImageFromStream(Bitmap bitmap, String path, int maxWidth, int maxHeight) throws IOException {
         byte[] result = null;
-        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
         Bitmap resizedImage;
         if (maxWidth > 0 || maxHeight > 0) {
             resizedImage = resizeImage(bitmap, maxWidth, maxHeight);
         } else {
             resizedImage = bitmap;
         }
-        resizedImage = rotateImageIfRequired(resizedImage, path);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         resizedImage.compress(Bitmap.CompressFormat.JPEG, 90, outStream);
         return outStream.toByteArray();
@@ -79,20 +82,29 @@ public class FileHelpers {
         return Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
     }
 
-    private static Bitmap rotateImageIfRequired(Bitmap img, String path) throws IOException {
-        ExifInterface ei = new ExifInterface(path);
-        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-
-        switch (orientation) {
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                return rotateImage(img, 90);
-            case ExifInterface.ORIENTATION_ROTATE_180:
-                return rotateImage(img, 180);
-            case ExifInterface.ORIENTATION_ROTATE_270:
-                return rotateImage(img, 270);
-            default:
-                return img;
+    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri) throws IOException {
+        int rotationAngle = getOrientation(context, uri);
+        if (rotationAngle > 0) {
+            return rotateImage(img, rotationAngle);
         }
+
+        return img;
+    }
+
+    private static int getOrientation(Context context, Uri photoUri) {
+        Cursor cursor = context.getContentResolver().query(photoUri,
+                new String[]{MediaStore.Images.ImageColumns.ORIENTATION}, null, null, null);
+
+        if (cursor.getCount() != 1) {
+            cursor.close();
+            return -1;
+        }
+
+        cursor.moveToFirst();
+        int orientation = cursor.getInt(0);
+        cursor.close();
+        cursor = null;
+        return orientation;
     }
 
     private static Bitmap rotateImage(Bitmap img, float angle) {
