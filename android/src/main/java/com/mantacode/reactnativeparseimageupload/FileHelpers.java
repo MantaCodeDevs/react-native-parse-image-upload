@@ -95,7 +95,7 @@ public class FileHelpers {
         Cursor cursor = context.getContentResolver().query(photoUri,
                 new String[]{MediaStore.Images.ImageColumns.ORIENTATION}, null, null, null);
 
-        if (cursor.getCount() != 1) {
+        if (cursor.getCount() != 1 || cursor.getColumnCount() == 0) {
             cursor.close();
             return -1;
         }
