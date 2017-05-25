@@ -82,8 +82,13 @@ public class FileHelpers {
         return Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
     }
 
-    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri) {
-        int rotationAngle = getOrientation(context, uri);
+    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri) throws Exception {
+        int rotationAngle = getOrientationFromMediaStore(context, uri);
+        if (rotationAngle > 0) {
+            return rotateImage(img, rotationAngle);
+        }
+
+        rotationAngle = getOrientationFromExif(context, uri);
         if (rotationAngle > 0) {
             return rotateImage(img, rotationAngle);
         }
@@ -91,7 +96,7 @@ public class FileHelpers {
         return img;
     }
 
-    private static int getOrientation(Context context, Uri photoUri) {
+    private static int getOrientationFromMediaStore(Context context, Uri photoUri) {
         Cursor cursor = context.getContentResolver().query(photoUri,
                 new String[]{MediaStore.Images.ImageColumns.ORIENTATION}, null, null, null);
 				
@@ -107,6 +112,30 @@ public class FileHelpers {
         cursor.close();
         cursor = null;
         return orientation;
+    }
+
+    private static int getOrientationFromExif(Context context, Uri photoUri) throws Exception {
+        int rotate = 0;
+
+        context.getContentResolver().notifyChange(photoUri, null);
+        File imageFile = new File(photoUri.getPath());
+
+        ExifInterface exif = new ExifInterface(imageFile.getAbsolutePath());
+        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                rotate = 270;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                rotate = 180;
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                rotate = 90;
+                break;
+        }
+
+        return rotate;
     }
 
     private static Bitmap rotateImage(Bitmap img, float angle) {
