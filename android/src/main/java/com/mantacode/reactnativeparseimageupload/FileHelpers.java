@@ -121,8 +121,13 @@ public class FileHelpers {
     private static int getOrientationFromExif(Context context, Uri photoUri) throws Exception {
         int rotate = 0;
 
-        context.getContentResolver().notifyChange(photoUri, null);
-        File imageFile = new File(photoUri.getPath());
+        Cursor cursor = context.getContentResolver().query(photoUri,
+                new String[]{MediaStore.Images.Media.DATA}, null, null, null);
+        int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+        if (column_index == -1) return -1;
+
+        cursor.moveToFirst();
+        String path = cursor.getString(column_index);
 
         ExifInterface exif = new ExifInterface(imageFile.getAbsolutePath());
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
