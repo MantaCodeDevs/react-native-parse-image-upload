@@ -26,13 +26,13 @@ public class ParseImageUploadModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void uploadImage(String uri, String fileName, int maxWidth, int maxHeight, final Promise promise) {
+    public void uploadImage(String uri, String fileName, int maxWidth, int maxHeight, int rotation, final Promise promise) {
         fileName = fileName == null || fileName.length() == 0 ? UUID.randomUUID().toString() : fileName;
         boolean isRemoteUrl = uri.indexOf("http://") > -1 || uri.indexOf("https://") > -1;
         try {
             byte[] fileData = isRemoteUrl ?
                     FileHelpers.getJpgImageFromRemoteUrl(uri, maxWidth, maxHeight) :
-                    FileHelpers.getJpgImageFromUri(getReactApplicationContext(), uri, maxWidth, maxHeight);
+                    FileHelpers.getJpgImageFromUri(getReactApplicationContext(), uri, maxWidth, maxHeight, rotation);
             saveFile(fileData, fileName + ".jpg", promise);
         } catch (Exception ex) {
             promise.reject(ex);
