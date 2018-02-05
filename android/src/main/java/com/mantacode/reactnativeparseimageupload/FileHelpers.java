@@ -14,14 +14,14 @@ import java.io.*;
 
 public class FileHelpers {
 
-    public static byte[] getJpgImageFromUri(Context context, String uri, int maxWidth, int maxHeight) throws Exception {
+    public static byte[] getJpgImageFromUri(Context context, String uri, int maxWidth, int maxHeight, int rotation) throws Exception {
         byte[] result = null;
         InputStream inputStream = null;
         try {
             Uri contentUri = Uri.parse(uri);
             inputStream = context.getContentResolver().openInputStream(contentUri);
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            bitmap = rotateImageIfRequired(context, bitmap, contentUri);
+            bitmap = rotateImageIfRequired(context, bitmap, contentUri, rotation);
             result = getResizedImageFromStream(bitmap, contentUri.getPath(), maxWidth, maxHeight);
         } finally {
             if (inputStream != null) {
@@ -82,7 +82,11 @@ public class FileHelpers {
         return Bitmap.createScaledBitmap(image, finalWidth, finalHeight, true);
     }
 
-    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri) throws Exception {
+    private static Bitmap rotateImageIfRequired(Context context, Bitmap img, Uri uri, int rotation) throws Exception {
+        if (rotation > -1) {
+            return rotation != 0 ? rotateImage(img, rotation) : img;
+        }
+
         int rotationAngle = getOrientationFromMediaStore(context, uri);
         if (rotationAngle > 0) {
             return rotateImage(img, rotationAngle);
@@ -117,8 +121,13 @@ public class FileHelpers {
     private static int getOrientationFromExif(Context context, Uri photoUri) throws Exception {
         int rotate = 0;
 
-        context.getContentResolver().notifyChange(photoUri, null);
-        File imageFile = new File(photoUri.getPath());
+        Cursor cursor = context.getContentResolver().query(photoUri,
+                new String[]{MediaStore.Images.Media.DATA}, null, null, null);
+        int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+        if (column_index == -1) return -1;
+
+        cursor.moveToFirst();
+        String path = cursor.getString(column_index);
 
         ExifInterface exif = new ExifInterface(imageFile.getAbsolutePath());
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
