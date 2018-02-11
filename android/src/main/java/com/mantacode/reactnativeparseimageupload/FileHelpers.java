@@ -129,7 +129,7 @@ public class FileHelpers {
         cursor.moveToFirst();
         String path = cursor.getString(column_index);
 
-        ExifInterface exif = new ExifInterface(imageFile.getAbsolutePath());
+        ExifInterface exif = new ExifInterface(path);
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 
         switch (orientation) {
