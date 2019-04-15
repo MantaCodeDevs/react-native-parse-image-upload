@@ -123,6 +123,9 @@ public class FileHelpers {
 
         Cursor cursor = context.getContentResolver().query(photoUri,
                 new String[]{MediaStore.Images.Media.DATA}, null, null, null);
+	
+	if (cursor == null) return -1;
+	
         int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
         if (column_index == -1) return -1;
 
