@@ -1,16 +1,18 @@
 package com.mantacode.reactnativeparseimageupload;
 
 import android.content.Context;
-import android.net.Uri;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
+import android.net.Uri;
+import android.os.Build;
 import android.provider.MediaStore;
-import android.database.Cursor;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.net.URL;
-import java.io.*;
 
 public class FileHelpers {
 
@@ -103,7 +105,7 @@ public class FileHelpers {
     private static int getOrientationFromMediaStore(Context context, Uri photoUri) {
         Cursor cursor = context.getContentResolver().query(photoUri,
                 new String[]{MediaStore.Images.ImageColumns.ORIENTATION}, null, null, null);
-				
+
         if (cursor == null) return -1;
 
         if (cursor.getCount() != 1 || cursor.getColumnCount() == 0) {
@@ -114,25 +116,12 @@ public class FileHelpers {
         cursor.moveToFirst();
         int orientation = cursor.getInt(0);
         cursor.close();
-        cursor = null;
         return orientation;
     }
 
-    private static int getOrientationFromExif(Context context, Uri photoUri) throws Exception {
+
+    private static int getOrientationFromExif(ExifInterface exif) {
         int rotate = 0;
-
-        Cursor cursor = context.getContentResolver().query(photoUri,
-                new String[]{MediaStore.Images.Media.DATA}, null, null, null);
-	
-	if (cursor == null) return -1;
-	
-        int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
-        if (column_index == -1) return -1;
-
-        cursor.moveToFirst();
-        String path = cursor.getString(column_index);
-
-        ExifInterface exif = new ExifInterface(path);
         int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
 
         switch (orientation) {
@@ -148,6 +137,32 @@ public class FileHelpers {
         }
 
         return rotate;
+    }
+
+    private static int getOrientationFromExif(Context context, Uri photoUri) throws Exception {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            InputStream inputStream = null;
+            try {
+                Uri contentUri = Uri.parse(photoUri.toString());
+                inputStream = context.getContentResolver().openInputStream(contentUri);
+                ExifInterface exif = new ExifInterface(inputStream);
+                return getOrientationFromExif(exif);
+            } finally {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            }
+        } else {
+            Cursor cursor = context.getContentResolver().query(photoUri,
+                    new String[]{MediaStore.Images.Media.DATA}, null, null, null);
+            int column_index = cursor.getColumnIndex(MediaStore.Images.Media.DATA);
+            if (column_index == -1) return -1;
+
+            cursor.moveToFirst();
+            String path = cursor.getString(column_index);
+            ExifInterface exif = new ExifInterface(path);
+            return getOrientationFromExif(exif);
+        }
     }
 
     private static Bitmap rotateImage(Bitmap img, float angle) {
