@@ -35,5 +35,5 @@ repositories {
 
 dependencies {
     compile 'com.facebook.react:react-native:+'
-    compile 'com.parse:parse-android:1.13.1'
+    compile 'com.github.parse-community.Parse-SDK-Android:parse:1.18.5'
 }
